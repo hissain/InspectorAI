@@ -22,9 +22,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
  * Orchestrates the AI API call based on provider.
  */
 async function handlePromptExecution({ html, query, settings }) {
-  const { provider, model, apiKey, maxTokens } = settings;
+  const { provider, model, apiKey, maxTokens, customBaseUrl } = settings;
   
-  if (!apiKey) {
+  // Custom provider might use empty key (e.g. localhost)
+  if (!apiKey && provider !== 'custom') {
     throw new Error('API Key is missing.');
   }
 
@@ -42,6 +43,8 @@ async function handlePromptExecution({ html, query, settings }) {
         return await callGemini(model, apiKey, maxTokens, systemPrompt, userPrompt);
       case 'llama':
         return await callLlama(model, apiKey, maxTokens, systemPrompt, userPrompt);
+      case 'custom':
+        return await callCustom(customBaseUrl, model, apiKey, maxTokens, systemPrompt, userPrompt);
       default:
         throw new Error(`Provider ${provider} not supported.`);
     }
@@ -163,6 +166,59 @@ async function callLlama(model, apiKey, maxTokens, system, user) {
   if (!response.ok) {
     const err = await response.json();
     throw new Error(err.error?.message || 'Llama (Groq) API Error');
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
+
+// --- Custom (OpenAI Compatible) ---
+async function callCustom(baseUrl, model, apiKey, maxTokens, system, user) {
+  // Remove trailing slash if present, append /chat/completions if missing
+  let endpoint = baseUrl.replace(/\/$/, '');
+  if (!endpoint.endsWith('/chat/completions')) {
+    // If user provided just base like https://api.deepseek.com/v1, append /chat/completions
+    // But some providers might be weird. Let's assume standard structure if not explicit.
+    // If it ends in /v1, append /chat/completions
+    if (endpoint.endsWith('/v1')) {
+      endpoint += '/chat/completions';
+    } else {
+      // Just append /chat/completions and hope user provided root
+      // OR user might have provided full URL.
+      // Let's assume user provides BASE URL (e.g. https://api.openai.com/v1)
+      endpoint += '/chat/completions';
+    }
+  }
+
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+  if (apiKey) {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  }
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: headers,
+    body: JSON.stringify({
+      model: model,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: user }
+      ],
+      max_tokens: maxTokens,
+      temperature: 0.7
+    })
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    let errMsg = errText;
+    try {
+        const json = JSON.parse(errText);
+        errMsg = json.error?.message || json.message || errText;
+    } catch (e) {}
+    throw new Error(`Custom API Error: ${errMsg}`);
   }
 
   const data = await response.json();

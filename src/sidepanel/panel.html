@@ -204,14 +204,27 @@
         <option value="anthropic">Anthropic</option>
         <option value="gemini">Google Gemini</option>
         <option value="llama">Meta Llama</option>
+        <option value="custom">Custom (OpenAI Compatible)</option>
       </select>
     </div>
 
-    <div class="form-group">
+    <div class="form-group" id="modelGroup">
       <label for="model">Model</label>
       <select id="model">
         <!-- Options populated dynamically -->
       </select>
+    </div>
+
+    <!-- Custom Provider Fields -->
+    <div id="customFields" class="hidden">
+      <div class="form-group">
+        <label for="customBaseUrl">Base URL</label>
+        <input type="text" id="customBaseUrl" placeholder="https://api.example.com/v1">
+      </div>
+      <div class="form-group">
+        <label for="customModel">Model ID</label>
+        <input type="text" id="customModel" placeholder="e.g. deepseek-coder">
+      </div>
     </div>
 
     <div class="form-group">

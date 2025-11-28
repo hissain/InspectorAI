@@ -1,16 +1,20 @@
 /**
  * @typedef {Object} AppSettings
- * @property {string} provider - The AI provider (openai, anthropic, gemini, llama).
+ * @property {string} provider - The AI provider (openai, anthropic, gemini, llama, custom).
  * @property {string} model - The model identifier.
  * @property {string} apiKey - The API key for the provider.
  * @property {number} maxTokens - Max tokens for generation.
+ * @property {string} [customBaseUrl] - Base URL for custom provider.
+ * @property {string} [customModel] - Model ID for custom provider.
  */
 
 const DEFAULT_SETTINGS = {
   provider: 'openai',
   model: 'gpt-4o-mini',
   apiKey: '',
-  maxTokens: 2048
+  maxTokens: 2048,
+  customBaseUrl: '',
+  customModel: ''
 };
 
 /**

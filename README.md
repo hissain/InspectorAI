@@ -29,6 +29,7 @@
   - **Google Gemini** (Gemini 1.5 Pro, Gemini 1.5 Flash, Gemini 2.5)
   - **Anthropic** (Claude 3.5 Sonnet, Claude 3 Opus)
   - **Meta Llama** (via Groq)
+  - **Custom Provider**: Connect to any OpenAI-compatible API (e.g., Local LLMs, DeepSeek, Mistral).
 - **Integrated Side Panel**: A persistent workspace that doesn't obstruct your view.
 - **Secure Configuration**: API keys are stored locally on your device.
 
@@ -65,10 +66,11 @@
 
 The extension comes pre-configured with support for the latest models, including:
 
-- **Gemini**: 1.5 Flash, 1.5 Pro, 2.5 Flash/Pro.
-- **OpenAI**: GPT-4o, GPT-4o-mini.
-- **Anthropic**: Claude 3.5 Sonnet.
-- **Llama 3**: 8B, 70B (via Groq).
+- **Google Gemini**: Gemini 3, Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.5 Flash-Lite.
+- **OpenAI**: GPT-4.1, GPT-4.1 Mini, o3-mini, GPT-3.5 Turbo.
+- **Anthropic**: Claude Haiku 4.5, Claude Opus 4.
+- **Meta Llama**: Llama 3 8B, Llama 3 70B, Llama 3 405B (via Groq).
+- **Custom**: Configure any model with a custom Base URL (compatible with Ollama, vLLM, etc.).
 
 ## Privacy
 

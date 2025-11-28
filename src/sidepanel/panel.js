@@ -21,6 +21,10 @@ const settingsBtn = document.getElementById('settingsBtn');
 // DOM Elements - Settings View
 const providerSelect = document.getElementById('provider');
 const modelSelect = document.getElementById('model');
+const modelGroup = document.getElementById('modelGroup');
+const customFields = document.getElementById('customFields');
+const customBaseUrl = document.getElementById('customBaseUrl');
+const customModel = document.getElementById('customModel');
 const apiKeyInput = document.getElementById('apiKey');
 const maxTokensInput = document.getElementById('maxTokens');
 const saveSettingsBtn = document.getElementById('saveSettingsBtn');
@@ -29,10 +33,10 @@ const statusDiv = document.getElementById('status');
 
 const PROVIDER_MODELS = {
   openai: [
-    { value: 'gpt-4.1', label: 'GPT‑4.1' },
-    { value: 'gpt-4.1-mini', label: 'GPT‑4.1 Mini' },
-    { value: 'o3-mini', label: 'o3‑mini' },
-    { value: 'gpt-3.5-turbo', label: 'GPT‑3.5 Turbo' } // legacy/stable
+    { value: 'gpt-4.1', label: 'GPT-4.1' },
+    { value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini' },
+    { value: 'o3-mini', label: 'o3-mini' },
+    { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' }
   ],
   anthropic: [
     { value: 'claude-haiku-4.5', label: 'Claude Haiku 4.5' },
@@ -42,16 +46,14 @@ const PROVIDER_MODELS = {
     { value: 'gemini-3', label: 'Gemini 3' },
     { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
     { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-    { value: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash‑Lite' }
+    { value: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite' }
   ],
   llama: [
     { value: 'llama-3-8b', label: 'Llama 3 8B' },
     { value: 'llama-3-70b', label: 'Llama 3 70B' },
     { value: 'llama-3-405b', label: 'Llama 3 405B' }
-    // experimental Llama 4 variants can be added if needed
-    // { value: 'llama-4-scout', label: 'Llama 4 Scout (experimental)' },
-    // { value: 'llama-4-maverick', label: 'Llama 4 Maverick (experimental)' }
-  ]
+  ],
+  custom: [] // Handled via text inputs
 };
 
 
@@ -83,6 +85,15 @@ function updatePreview(html) {
 }
 
 function updateModelOptions(provider, selectedModel) {
+  if (provider === 'custom') {
+    modelGroup.classList.add('hidden');
+    customFields.classList.remove('hidden');
+    return;
+  }
+
+  modelGroup.classList.remove('hidden');
+  customFields.classList.add('hidden');
+
   modelSelect.innerHTML = '';
   const models = PROVIDER_MODELS[provider] || [];
   
@@ -116,6 +127,12 @@ async function loadSettingsToUI() {
   maxTokensInput.value = settings.maxTokens;
   apiKeyInput.value = apiKey;
 
+  // Custom provider fields
+  if (settings.provider === 'custom') {
+    customBaseUrl.value = settings.customBaseUrl || '';
+    customModel.value = settings.customModel || '';
+  }
+
   updateModelOptions(settings.provider, settings.model);
 }
 
@@ -142,9 +159,23 @@ providerSelect.addEventListener('change', () => {
 
 saveSettingsBtn.addEventListener('click', async () => {
   const provider = providerSelect.value;
-  const model = modelSelect.value;
+  let model = modelSelect.value;
   const maxTokens = parseInt(maxTokensInput.value, 10);
   const apiKey = apiKeyInput.value.trim();
+  
+  let extraSettings = {};
+
+  if (provider === 'custom') {
+    const baseUrl = customBaseUrl.value.trim();
+    const cModel = customModel.value.trim();
+    if (!baseUrl) {
+      statusDiv.textContent = 'Base URL required';
+      statusDiv.style.color = 'red';
+      return;
+    }
+    model = cModel; // Use custom model name
+    extraSettings = { customBaseUrl: baseUrl, customModel: cModel };
+  }
 
   if (isNaN(maxTokens) || maxTokens < 1) {
     statusDiv.textContent = 'Invalid Max Tokens';
@@ -152,7 +183,7 @@ saveSettingsBtn.addEventListener('click', async () => {
     return;
   }
 
-  await saveSettings({ provider, model, maxTokens });
+  await saveSettings({ provider, model, maxTokens, ...extraSettings });
   await saveApiKey(apiKey);
 
   statusDiv.textContent = 'Saved!';
@@ -184,7 +215,7 @@ pickBtn.addEventListener('click', async () => {
         }
       });
 
-      // Handle disconnect (e.g. if user closes panel or page refreshes OR CONNECTION FAILS)
+      // Handle disconnect
       pickerPort.onDisconnect.addListener(() => {
         if (chrome.runtime.lastError) {
           console.error(chrome.runtime.lastError);
@@ -212,7 +243,10 @@ sendBtn.addEventListener('click', async () => {
   const settings = await getSettings();
   const apiKey = await getApiKey();
 
-  if (!apiKey) {
+  // API Key is optional for some custom providers (e.g. local ollama), but usually required. 
+  // Let's allow empty key if provider is custom? 
+  // The user might be using localhost with no auth.
+  if (!apiKey && settings.provider !== 'custom') {
     markdownOutput.innerHTML = '<p style="color:red">Error: API Key missing. Click the ⚙️ icon to set it.</p>';
     return;
   }
@@ -270,12 +304,11 @@ copyHtmlBtn.addEventListener('click', async () => {
 });
 
 copyResponseBtn.addEventListener('click', async () => {
-  // Get text content from active view (markdown or raw)
   let textToCopy = '';
   if (!rawOutput.classList.contains('hidden')) {
     textToCopy = rawOutput.textContent;
   } else {
-    textToCopy = markdownOutput.innerText; // Get text without HTML tags
+    textToCopy = markdownOutput.innerText;
   }
   
   if (textToCopy) {
