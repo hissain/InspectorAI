@@ -49,9 +49,7 @@ function handleKeyDown(e) {
     e.stopPropagation();
     disablePicker();
     
-    // Also remove overlay and selection if present
-    const overlay = document.getElementById('inspect-ai-overlay');
-    if (overlay) overlay.remove();
+    // Also remove selection if present
     
     if (selectedElement) {
       selectedElement.classList.remove('inspect-ai-selected');
@@ -121,9 +119,16 @@ function cleanElement(element) {
     const allowedAttrs = ['src', 'alt', 'href', 'title', 'value', 'placeholder', 'aria-label', 'role'];
     
     // Convert namedNodeMap to array to iterate safely while removing
-    Array.from(el.attributes).forEach(attr => {
-      if (!allowedAttrs.includes(attr.name)) {
-        el.removeAttribute(attr.name);
+    const attrs = Array.from(el.attributes);
+    attrs.forEach(attr => {
+      const name = attr.name;
+      const val = attr.value;
+      
+      if (!allowedAttrs.includes(name)) {
+        el.removeAttribute(name);
+      } else if (val.length > 50) {
+        // Truncate long attributes to save tokens
+        el.setAttribute(name, val.substring(0, 50) + '...');
       }
     });
     

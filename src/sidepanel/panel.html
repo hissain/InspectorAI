@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>InspectAI Panel</title>
+  <title>InspectorAI Panel</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -54,9 +54,9 @@
     
     .icon-btn {
         background-repeat: no-repeat;
-        background-position: center;
-        background-size: 16px;
-        padding-left: 24px;
+        background-position: 6px center;
+        background-size: 14px;
+        padding-left: 26px;
     }
 
     /* Settings Button Style */
@@ -159,7 +159,7 @@
 <body>
   <!-- Header -->
   <div class="header">
-    <h2>InspectAI</h2>
+    <h2>InspectorAI</h2>
     <div>
       <button id="settingsBtn" title="Settings">⚙️</button>
     </div>
@@ -168,7 +168,7 @@
   <!-- Main View -->
   <div id="main-view" style="display: flex; flex-direction: column; height: 100%;">
     <div style="margin-bottom: 12px; display: flex; gap: 8px; justify-content: flex-end;">
-        <button id="copyHtmlBtn" class="outline icon-btn" title="Copy Cleaned HTML" style="display: none; background-image: url('../assets/copy.png');">HTML</button>
+        <button id="copyHtmlBtn" class="outline icon-btn" title="Copy Cleaned HTML" style="display: none; background-image: url('/assets/copy.png');">HTML</button>
         <button id="pickBtn">Pick Element</button>
     </div>
     
@@ -190,7 +190,7 @@
     </div>
     
     <div style="margin-top: 8px; text-align: right;">
-        <button id="copyResponseBtn" class="outline icon-btn" title="Copy Response" style="background-image: url('../assets/copy.png'); display: none;">Copy Response</button>
+        <button id="copyResponseBtn" class="outline icon-btn" title="Copy Response" style="background-image: url('/assets/copy.png'); display: none;">Copy Response</button>
     </div>
   </div>
 
