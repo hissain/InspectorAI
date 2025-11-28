@@ -13,11 +13,11 @@
 
 ### Common Use Cases
 
-*   **Translation**: Select a block of text in a foreign language and ask AI to translate it while preserving the structure.
-*   **Summarization**: Pick a news article or long post and get a concise summary.
-*   **Data Extraction**: Select a complex table and ask AI to convert it into CSV or JSON format.
-*   **Learning**: Select a UI component and ask "How is this built?" or "Explain this code".
-*   **Accessibility**: Check if a selected element is screen-reader friendly.
+* **Translation**: Select a block of text in a foreign language and ask AI to translate it while preserving the structure.
+* **Summarization**: Pick a news article or long post and get a concise summary.
+* **Data Extraction**: Select a complex table and ask AI to convert it into CSV or JSON format.
+* **Learning**: Select a UI component and ask "How is this built?" or "Explain this code".
+* **Accessibility**: Check if a selected element is screen-reader friendly.
 
 ## Features
 
@@ -33,23 +33,24 @@
 - **Integrated Side Panel**: A persistent workspace that doesn't obstruct your view.
 - **Secure Configuration**: API keys are stored locally on your device.
 
-
 ## Installation
 
 ### Method 1: Download ZIP (For General Users)
-1.  Click the **"Code"** button at the top of the GitHub page and select **"Download ZIP"**.
-2.  Unzip the downloaded file.
-3.  Open Google Chrome and go to `chrome://extensions/`.
-4.  Enable **Developer mode** (top right toggle).
-5.  Click **Load unpacked**.
-6.  Select the unzipped folder (e.g., `InspectorAI-main`).
+
+1. Click the **"Code"** button at the top of the GitHub page and select **"Download ZIP"**.
+2. Unzip the downloaded file.
+3. Open Google Chrome and go to `chrome://extensions/`.
+4. Enable **Developer mode** (top right toggle).
+5. Click **Load unpacked**.
+6. Select the unzipped folder (e.g., `InspectorAI-main`).
 
 ### Method 2: Git Clone (For Developers)
-1.  Clone this repository:
-    ```bash
-    git clone https://github.com/hissain/InspectorAI.git
-    ```
-2.  Open Google Chrome and navigate to `chrome://extensions/`.
+
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/hissain/InspectorAI.git
+   ```
+2. Open Google Chrome and navigate to `chrome://extensions/`.
 3. Enable **Developer mode** in the top-right corner.
 4. Click **Load unpacked**.
 5. Select the `InspectorAI` directory from your file system.
@@ -79,8 +80,7 @@ The extension comes pre-configured with support for the latest models, including
 
 ## Author
 
-**Md. Sazzad Hissain Khan**
-Email: hissain.khan[AT]gmail.com
+**Md. Sazzad Hissain Khan** (Email: hissain.khan@gmail.com)
 GitHub: [https://github.com/hissain/InspectorAI](https://github.com/hissain/InspectorAI)
 
 ## License

@@ -7,8 +7,7 @@
     "sidePanel",
     "storage",
     "scripting",
-    "activeTab",
-    "contextMenus"
+    "activeTab"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -23,9 +22,10 @@
     "default_path": "src/sidepanel/panel.html"
   },
   "icons": {
-    "16": "assets/icon.png",
-    "48": "assets/icon.png",
-    "128": "assets/icon.png"
+    "16": "assets/icon16.png",
+    "32": "assets/icon32.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
   },
   "content_scripts": [
     {
