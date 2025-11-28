@@ -8,6 +8,8 @@ const mainView = document.getElementById('main-view');
 const settingsView = document.getElementById('settings-view');
 const pickBtn = document.getElementById('pickBtn');
 const sendBtn = document.getElementById('sendBtn');
+const copyHtmlBtn = document.getElementById('copyHtmlBtn');
+const copyResponseBtn = document.getElementById('copyResponseBtn');
 const clearBtn = document.getElementById('clearBtn');
 const toggleRawBtn = document.getElementById('toggleRawBtn');
 const queryInput = document.getElementById('queryInput');
@@ -25,29 +27,33 @@ const saveSettingsBtn = document.getElementById('saveSettingsBtn');
 const cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
 const statusDiv = document.getElementById('status');
 
-// Constants
 const PROVIDER_MODELS = {
   openai: [
-    { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
-    { value: 'gpt-4o', label: 'GPT-4o' },
-    { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' }
+    { value: 'gpt-4.1', label: 'GPT‑4.1' },
+    { value: 'gpt-4.1-mini', label: 'GPT‑4.1 Mini' },
+    { value: 'o3-mini', label: 'o3‑mini' },
+    { value: 'gpt-3.5-turbo', label: 'GPT‑3.5 Turbo' } // legacy/stable
   ],
   anthropic: [
-    { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku' },
-    { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet' },
-    { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' }
+    { value: 'claude-haiku-4.5', label: 'Claude Haiku 4.5' },
+    { value: 'claude-opus-4', label: 'Claude Opus 4' }
   ],
   gemini: [
-    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+    { value: 'gemini-3', label: 'Gemini 3' },
     { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
-    { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-    { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' }
+    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+    { value: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash‑Lite' }
   ],
   llama: [
     { value: 'llama-3-8b', label: 'Llama 3 8B' },
-    { value: 'llama-3-70b', label: 'Llama 3 70B' }
+    { value: 'llama-3-70b', label: 'Llama 3 70B' },
+    { value: 'llama-3-405b', label: 'Llama 3 405B' }
+    // experimental Llama 4 variants can be added if needed
+    // { value: 'llama-4-scout', label: 'Llama 4 Scout (experimental)' },
+    // { value: 'llama-4-maverick', label: 'Llama 4 Maverick (experimental)' }
   ]
 };
+
 
 // --- Helper Functions ---
 
@@ -66,9 +72,13 @@ function updatePreview(html) {
     htmlPreview.textContent = `Selected: ${preview}`;
     htmlPreview.title = html;
     sendBtn.disabled = false;
+    copyHtmlBtn.disabled = false;
+    copyHtmlBtn.style.display = 'inline-block';
   } else {
     htmlPreview.textContent = 'No element selected';
     sendBtn.disabled = true;
+    copyHtmlBtn.disabled = true;
+    copyHtmlBtn.style.display = 'none';
   }
 }
 
@@ -109,6 +119,16 @@ async function loadSettingsToUI() {
   updateModelOptions(settings.provider, settings.model);
 }
 
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (err) {
+    console.error('Failed to copy: ', err);
+    return false;
+  }
+}
+
 // --- Event Listeners ---
 
 // Settings Toggle
@@ -145,22 +165,38 @@ saveSettingsBtn.addEventListener('click', async () => {
 
 
 // Picker & AI Logic
+let pickerPort = null;
+
 pickBtn.addEventListener('click', async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (tab) {
     try {
-      await chrome.tabs.sendMessage(tab.id, { action: 'startPicking' });
+      // Use long-lived connection to manage state
+      pickerPort = chrome.tabs.connect(tab.id, { name: 'inspect-ai-picker' });
+      
+      // Listen for selection from content script
+      pickerPort.onMessage.addListener((message) => {
+        if (message.action === 'elementSelected') {
+          currentHtml = message.html;
+          updatePreview(currentHtml);
+          pickerPort.disconnect(); 
+          pickerPort = null;
+        }
+      });
+
+      // Handle disconnect (e.g. if user closes panel or page refreshes OR CONNECTION FAILS)
+      pickerPort.onDisconnect.addListener(() => {
+        if (chrome.runtime.lastError) {
+          console.error(chrome.runtime.lastError);
+          alert('Could not start picker. Please REFRESH the web page and try again.\n\n(This happens when the extension is updated but the page is old.)');
+        }
+        pickerPort = null;
+      });
+
     } catch (err) {
       console.error(err);
-      alert('Could not start picker. Please REFRESH the web page and try again.\n\n(This happens when the extension is updated but the page is old.)');
+      alert('Could not start picker: ' + err.message);
     }
-  }
-});
-
-chrome.runtime.onMessage.addListener((message) => {
-  if (message.action === 'elementSelected') {
-    currentHtml = message.html;
-    updatePreview(currentHtml);
   }
 });
 
@@ -218,7 +254,39 @@ function renderResponse(text) {
     markdownOutput.textContent = text;
   }
   rawOutput.textContent = text;
+  copyResponseBtn.style.display = 'inline-block';
 }
+
+// Copy Logic
+copyHtmlBtn.addEventListener('click', async () => {
+  if (currentHtml) {
+    const success = await copyToClipboard(currentHtml);
+    if (success) {
+      const originalText = copyHtmlBtn.textContent;
+      copyHtmlBtn.textContent = 'Copied!';
+      setTimeout(() => copyHtmlBtn.textContent = originalText, 2000);
+    }
+  }
+});
+
+copyResponseBtn.addEventListener('click', async () => {
+  // Get text content from active view (markdown or raw)
+  let textToCopy = '';
+  if (!rawOutput.classList.contains('hidden')) {
+    textToCopy = rawOutput.textContent;
+  } else {
+    textToCopy = markdownOutput.innerText; // Get text without HTML tags
+  }
+  
+  if (textToCopy) {
+    const success = await copyToClipboard(textToCopy);
+    if (success) {
+      const originalText = copyResponseBtn.textContent;
+      copyResponseBtn.textContent = 'Copied!';
+      setTimeout(() => copyResponseBtn.textContent = originalText, 2000);
+    }
+  }
+});
 
 clearBtn.addEventListener('click', () => {
   markdownOutput.innerHTML = '';
@@ -226,6 +294,7 @@ clearBtn.addEventListener('click', () => {
   queryInput.value = '';
   currentHtml = '';
   updatePreview('');
+  copyResponseBtn.style.display = 'none';
 });
 
 toggleRawBtn.addEventListener('click', () => {

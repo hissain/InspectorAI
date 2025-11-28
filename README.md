@@ -6,9 +6,18 @@
 
 ### Why InspectorAI?
 
-Modern web development often involves analyzing complex UI components, refactoring legacy HTML, or translating dynamic content. Traditionally, developers have to manually inspect the DOM, copy messy HTML code, clean up scripts and attributes, and then switch context to paste it into an AI tool.
+Whether you are a developer refactoring code or a general user trying to understand a complex webpage, **InspectorAI** simplifies the process. It allows you to visually select any part of a website and instantly send it to an AI for analysis, translation, or summarization.
 
-**InspectorAI automates this entire workflow.** It allows you to visually select any element, automatically prunes the HTML to focus on meaningful content, and sends it directly to your preferred AI model—all without leaving the page.
+**For Developers:** Automate the tedious process of inspecting the DOM, cleaning up HTML, and context-switching to ChatGPT.
+**For Everyone Else:** Easily extract tables, translate content, or summarize articles without dealing with messy code.
+
+### Common Use Cases
+
+*   **Translation**: Select a block of text in a foreign language and ask AI to translate it while preserving the structure.
+*   **Summarization**: Pick a news article or long post and get a concise summary.
+*   **Data Extraction**: Select a complex table and ask AI to convert it into CSV or JSON format.
+*   **Learning**: Select a UI component and ask "How is this built?" or "Explain this code".
+*   **Accessibility**: Check if a selected element is screen-reader friendly.
 
 ## Features
 
@@ -26,11 +35,20 @@ Modern web development often involves analyzing complex UI components, refactori
 
 ## Installation
 
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/hissain/InspectorAI.git
-   ```
-2. Open Google Chrome and navigate to `chrome://extensions/`.
+### Method 1: Download ZIP (For General Users)
+1.  Click the **"Code"** button at the top of the GitHub page and select **"Download ZIP"**.
+2.  Unzip the downloaded file.
+3.  Open Google Chrome and go to `chrome://extensions/`.
+4.  Enable **Developer mode** (top right toggle).
+5.  Click **Load unpacked**.
+6.  Select the unzipped folder (e.g., `InspectorAI-main`).
+
+### Method 2: Git Clone (For Developers)
+1.  Clone this repository:
+    ```bash
+    git clone https://github.com/hissain/InspectorAI.git
+    ```
+2.  Open Google Chrome and navigate to `chrome://extensions/`.
 3. Enable **Developer mode** in the top-right corner.
 4. Click **Load unpacked**.
 5. Select the `InspectorAI` directory from your file system.

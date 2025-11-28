@@ -51,6 +51,13 @@
       border: 1px solid #ccc;
       color: #333;
     }
+    
+    .icon-btn {
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 16px;
+        padding-left: 24px;
+    }
 
     /* Settings Button Style */
     #settingsBtn {
@@ -159,8 +166,9 @@
   </div>
 
   <!-- Main View -->
-  <div id="main-view">
-    <div style="margin-bottom: 12px; display: flex; justify-content: flex-end;">
+  <div id="main-view" style="display: flex; flex-direction: column; height: 100%;">
+    <div style="margin-bottom: 12px; display: flex; gap: 8px; justify-content: flex-end;">
+        <button id="copyHtmlBtn" class="outline icon-btn" title="Copy Cleaned HTML" style="display: none; background-image: url('../assets/copy.png');">HTML</button>
         <button id="pickBtn">Pick Element</button>
     </div>
     
@@ -179,6 +187,10 @@
     <div id="response-container">
       <div id="markdown-output"></div>
       <pre id="raw-output" class="hidden"></pre>
+    </div>
+    
+    <div style="margin-top: 8px; text-align: right;">
+        <button id="copyResponseBtn" class="outline icon-btn" title="Copy Response" style="background-image: url('../assets/copy.png'); display: none;">Copy Response</button>
     </div>
   </div>
 

@@ -15,6 +15,7 @@ function enablePicker() {
 function disablePicker() {
   if (!isActive) return;
   isActive = false;
+  activePort = null; // Clear active port reference
   document.body.style.cursor = '';
   document.removeEventListener('mouseover', handleMouseOver);
   document.removeEventListener('mouseout', handleMouseOut);
@@ -47,6 +48,15 @@ function handleKeyDown(e) {
     e.preventDefault();
     e.stopPropagation();
     disablePicker();
+    
+    // Also remove overlay and selection if present
+    const overlay = document.getElementById('inspect-ai-overlay');
+    if (overlay) overlay.remove();
+    
+    if (selectedElement) {
+      selectedElement.classList.remove('inspect-ai-selected');
+      selectedElement = null;
+    }
   }
 }
 
@@ -54,6 +64,7 @@ function handleClick(e) {
   e.preventDefault();
   e.stopPropagation();
   
+  const portToSend = activePort; // Capture port before disabling
   disablePicker();
   
   if (selectedElement) {
@@ -63,14 +74,27 @@ function handleClick(e) {
   selectedElement = e.target;
   selectedElement.classList.add('inspect-ai-selected');
   
-  // Clean the HTML to reduce noise
-  const cleanedHtml = cleanElement(selectedElement);
-  
-  // Send the selected HTML to the side panel
-  chrome.runtime.sendMessage({
-    action: 'elementSelected',
-    html: cleanedHtml
-  });
+  try {
+    // Clean the HTML to reduce noise
+    const cleanedHtml = cleanElement(selectedElement);
+    
+    // Send the selected HTML to the side panel
+    if (portToSend) {
+      portToSend.postMessage({
+        action: 'elementSelected',
+        html: cleanedHtml
+      });
+    } else {
+      // Fallback for non-connected mode (if any)
+      chrome.runtime.sendMessage({
+        action: 'elementSelected',
+        html: cleanedHtml
+      });
+    }
+  } catch (err) {
+    console.error('InspectorAI: Error processing selection', err);
+    alert('Error capturing element. See console.');
+  }
   
   // Show quick actions overlay
   showOverlay();
@@ -141,9 +165,30 @@ function showOverlay() {
   }
 }
 
-// Listen for messages from background/popup/sidepanel
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'startPicking') {
+// Listen for long-lived connection from sidepanel
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === 'inspect-ai-picker') {
     enablePicker();
+    
+    // If the port disconnects (sidepanel closes), disable picker
+    port.onDisconnect.addListener(() => {
+      disablePicker();
+    });
+    
+    // Override message sending to use the port
+    const originalSendMessage = chrome.runtime.sendMessage;
+    
+    // Intercept selections to send via port
+    // We modify handleClick to use the port if active
+    // Or we can just use port.postMessage() directly if we restructure.
+    // Simpler: Keep the sendMessage logic in handleClick, but also post to port.
+    // Actually, panel.js expects message on port now.
+    
+    // Let's modify handleClick to check for port availability or change how we send data.
+    // Since we can't easily pass 'port' to handleClick without closure scope,
+    // we can assign it to a global variable or use a cleaner approach.
+    activePort = port;
   }
 });
+
+let activePort = null;
