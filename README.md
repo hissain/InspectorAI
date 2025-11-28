@@ -2,14 +2,14 @@
 
 ![InspectorAI Screenshot](assets/Screenshot.png)
 
-**InspectorAI** is a production-ready Chrome extension that supercharges your web development workflow by integrating powerful AI models directly into your browser's inspection tools.
+**InspectorAI** is a production-ready Chrome extension that supercharges your web data extraction and analysis workflow. Select any web component, extract its content with minimal tokens, and ask AI models for insights—all without leaving your browser.
 
 ### Why InspectorAI?
 
-Whether you are a developer refactoring code or a general user trying to understand a complex webpage, **InspectorAI** simplifies the process. It allows you to visually select any part of a website and instantly send it to an AI for analysis, translation, or summarization.
+**InspectorAI** simplifies the process of interacting with web content. It visually selects any part of a website, intelligently cleans the HTML to remove noise, and sends the core content to an AI for analysis, translation, or extraction.
 
-**For Developers:** Automate the tedious process of inspecting the DOM, cleaning up HTML, and context-switching to ChatGPT.
-**For Everyone Else:** Easily extract tables, translate content, or summarize articles without dealing with messy code.
+**For Everyone:** Easily extract tables to CSV, translate content, or summarize articles without dealing with messy code.
+**For Developers:** Automate DOM inspection and context-switching.
 
 ### Common Use Cases
 
