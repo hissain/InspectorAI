@@ -25,9 +25,10 @@
 - **AI-Powered Analysis**: Send selected content to top-tier AI models for instant feedback.
 - **Smart Content Extraction**: Automatically cleans and simplifies HTML to focus on visible text and structure, reducing noise and token usage.
 - **Multi-Provider Support**:
-  - **OpenAI** (GPT-4o, GPT-3.5)
-  - **Google Gemini** (Gemini 1.5 Pro, Gemini 1.5 Flash, Gemini 2.5)
-  - **Anthropic** (Claude 3.5 Sonnet, Claude 3 Opus)
+  - **Google AI Mode** (default, no token required)
+  - **OpenAI**
+  - **Google Gemini**
+  - **Anthropic**
   - **Meta Llama** (via Groq)
   - **Custom Provider**: Connect to any OpenAI-compatible API (e.g., Local LLMs, DeepSeek, Mistral).
 - **Integrated Side Panel**: A persistent workspace that doesn't obstruct your view.
