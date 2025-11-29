@@ -21,6 +21,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 /**
  * Orchestrates the AI API call based on provider.
  */
+async function logLastRequest(prompt, response) {
+  try {
+    await chrome.storage.local.set({
+      'last_prompt.log': prompt,
+      'last_response.log': response
+    });
+  } catch (error) {
+    console.error('Failed to log last request:', error);
+  }
+}
+
+function simpleHtmlToText(html) {
+  // This is a very basic parser. It won't handle complex cases perfectly
+  // but is good enough for extracting readable text for the Google AI model.
+  const stripped = html
+    .replace(/<style[^>]*>.*<\/style>/gs, '')   // Remove style blocks
+    .replace(/<script[^>]*>.*<\/script>/gs, '') // Remove script blocks
+    .replace(/<[^>]+>/g, ' ')                   // Remove all other tags
+    .replace(/\s+/g, ' ')                       // Collapse whitespace
+    .trim();
+  return stripped;
+}
+
 async function handlePromptExecution({ html, query, settings }) {
   const { provider, model, apiKey, maxTokens, customBaseUrl } = settings;
   
@@ -29,38 +52,46 @@ async function handlePromptExecution({ html, query, settings }) {
     throw new Error('API Key is missing.');
   }
 
-  const systemPrompt = "You are an AI assistant analyzing UI content from a webpage. You will receive a simplified HTML representation of the visible content.\n\nIMPORTANT RULES:\n1. Focus on the VISIBLE TEXT and CONTENT (tables, lists, images).\n2. Do NOT output the full HTML code unless explicitly asked to 'refactor' or 'rewrite code'.\n3. If asked to translate, summarize, or explain, provide ONLY the text result, not the HTML structure.\n4. Ignore technical noise (classes, attributes) if they are not relevant to the query.";
+  const systemPrompt = "You are an AI assistant analyzing UI content from a webpage. Your task is to return a markdown version of the HTML provided. Focus on VISIBLE TEXT and CONTENT, including tables, lists, paragraphs, and headers. Do not output the full HTML code. Ignore technical noise like classes and attributes if they are not relevant to the query.";
+
+  let userPrompt = `Here is the simplified HTML of the selected element:\n\n\`\`\`html\n${html}\n\`\`\`\n\nUser Query:\n${query}\n\`\`\`\n\nDo not include any extra commentary or introductory text`;
   
-  // Standard prompt for API providers
-  let userPrompt = `Here is the visible content structure (simplified HTML) of the selected element:\n\n\`\`\`html\n${html}\n\`\`\`\n\nUser Query:\n${query}`;
+  // if (provider === 'google-ai-mode') {
+  //   const extractedText = simpleHtmlToText(html);
+  //   userPrompt = `Please ${query} the following text and provide the response in clean markdown format. Do not include any extra commentary or introductory text.\n\nText to process:\n"${extractedText}"`;
+  // }
 
-  // Special prompt handling for Google AI Mode (Search URL limits)
-  if (provider === 'google-ai-mode') {
-    // Truncate HTML context aggressively to avoid 414 URI Too Long
-    //const truncatedHtml = html.length > 1500 ? html.substring(0, 1500) + '... (truncated)' : html;
-    // Format as a search-friendly query - Query FIRST for better focus
-    userPrompt = `${query}\n\nData to process:\n\`\`\`html\n${html}\n\`\`\`\n\n(Provide direct answer only in Markdown format within a codeblock. Do not add any extra conversation.)`;
-  }
-
+  let responseText = '';
   try {
     switch (provider) {
       case 'openai':
-        return await callOpenAI(model, apiKey, maxTokens, systemPrompt, userPrompt);
+        responseText = await callOpenAI(model, apiKey, maxTokens, systemPrompt, userPrompt);
+        break;
       case 'anthropic':
-        return await callAnthropic(model, apiKey, maxTokens, systemPrompt, userPrompt);
+        responseText = await callAnthropic(model, apiKey, maxTokens, systemPrompt, userPrompt);
+        break;
       case 'gemini':
-        return await callGemini(model, apiKey, maxTokens, systemPrompt, userPrompt);
-    // Format as a search-friendly query - Query FIRST for better focus
-    userPrompt = `${query} \n\nContext: ${truncatedText}`;
+        responseText = await callGemini(model, apiKey, maxTokens, systemPrompt, userPrompt);
+        break;
+      case 'llama':
+        responseText = await callLlama(model, apiKey, maxTokens, systemPrompt, userPrompt);
+        break;
       case 'custom':
-        return await callCustom(customBaseUrl, model, apiKey, maxTokens, systemPrompt, userPrompt);
+        responseText = await callCustom(customBaseUrl, model, apiKey, maxTokens, systemPrompt, userPrompt);
+        break;
       case 'google-ai-mode':
-        return await callGoogleAIMode(userPrompt);
+        responseText = await callGoogleAIMode(userPrompt);
+        break;
       default:
         throw new Error(`Provider ${provider} not supported.`);
     }
+    
+    await logLastRequest(userPrompt, responseText);
+    return responseText;
+
   } catch (error) {
     console.error('AI API Error:', error);
+    await logLastRequest(userPrompt, `Error: ${error.message}`);
     throw new Error(error.message || 'Failed to fetch response from AI provider.');
   }
 }
@@ -116,17 +147,16 @@ async function callGoogleAIMode(prompt) {
           if (message.error) {
             reject(new Error(message.error));
           } else {
+            if (message.rawHtml) {
+              // Log the raw HTML from the scraper
+              chrome.storage.local.set({ 'google_scraper_last_raw.html': message.rawHtml });
+            }
             resolve(message.data);
           }
 
-          // Delay closing for 5 seconds for debugging visibility
-          setTimeout(() => {
-            chrome.tabs.get(tab.id, () => {
-              if (!chrome.runtime.lastError) {
-                chrome.tabs.remove(tab.id);
-              }
-            });
-          }, 100);
+          if (!chrome.runtime.lastError) {
+            chrome.tabs.remove(tab.id);
+          }
         }
       };
 

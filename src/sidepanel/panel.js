@@ -30,6 +30,7 @@ const apiKeyInput = document.getElementById('apiKey');
 const maxTokensInput = document.getElementById('maxTokens');
 const saveSettingsBtn = document.getElementById('saveSettingsBtn');
 const cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
+const viewLogsBtn = document.getElementById('viewLogsBtn');
 const statusDiv = document.getElementById('status');
 
 const PROVIDER_MODELS = {
@@ -157,11 +158,40 @@ async function copyToClipboard(text) {
   }
 }
 
+async function viewLogs() {
+  try {
+    const data = await chrome.storage.local.get(['last_prompt.log', 'last_response.log']);
+    const prompt = data['last_prompt.log'] || 'No prompt logged.';
+    const response = data['last_response.log'] || 'No response logged.';
+
+    const logContent = `
+      <style>
+        pre {
+          white-space: pre-wrap;
+          word-wrap: break-word;
+        }
+      </style>
+      <h1>Last Prompt</h1>
+      <pre>${escapeHtml(prompt)}</pre>
+      <h1>Last Response</h1>
+      <pre>${escapeHtml(response)}</pre>
+    `;
+
+    const blob = new Blob([logContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    chrome.tabs.create({ url });
+  } catch (error) {
+    console.error('Failed to view logs:', error);
+    alert('Could not display logs. See console for details.');
+  }
+}
+
 // --- Event Listeners ---
 
 // Settings Toggle
 settingsBtn.addEventListener('click', showSettings);
 cancelSettingsBtn.addEventListener('click', hideSettings);
+viewLogsBtn.addEventListener('click', viewLogs);
 
 // Settings Logic
 providerSelect.addEventListener('change', () => {
@@ -229,6 +259,7 @@ pickBtn.addEventListener('click', async () => {
       // Handle disconnect
       pickerPort.onDisconnect.addListener(() => {
         if (chrome.runtime.lastError) {
+          console.log(chrome.runtime.lastError);
           console.error(chrome.runtime.lastError);
           alert('Could not start picker. Please REFRESH the web page and try again.\n\n(This happens when the extension is updated but the page is old.)');
         }

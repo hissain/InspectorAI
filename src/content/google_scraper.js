@@ -30,35 +30,13 @@
         return `\n\`\`\`${lang}\n${codeText}\n\`\`\`\n`;
       }
 
-      // Handle Lists
-      if (tagName === 'ul' || tagName === 'ol') {
-        let listMd = "\n";
-        Array.from(node.children).forEach(li => {
-          if (li.tagName.toLowerCase() === 'li') {
-            listMd += `- ${li.textContent.replace(/\s+/g, ' ').trim()}\n`;
-          }
+      // Only process pre and code blocks
+      if (tagName !== 'pre' && tagName !== 'code') {
+        let childContent = "";
+        node.childNodes.forEach(child => {
+          childContent += parseNode(child);
         });
-        return listMd + "\n";
-      }
-
-      // Handle Tables
-      if (tagName === 'table') {
-        let tableMd = "\n";
-        const rows = node.querySelectorAll('tr');
-        rows.forEach((row, index) => {
-          const cells = row.querySelectorAll('th, td');
-          const rowText = Array.from(cells).map(c => c.textContent.trim()).join(' | ');
-          tableMd += `| ${rowText} |\n`;
-          if (index === 0) {
-             tableMd += `| ${Array.from(cells).map(() => '---').join(' | ')} |\n`;
-          }
-        });
-        return tableMd + "\n";
-      }
-
-      // Handle Headings
-      if (['h1','h2','h3','h4'].includes(tagName)) {
-        return `\n### ${node.textContent.trim()}\n`;
+        return childContent;
       }
 
       // General traversal
@@ -67,16 +45,14 @@
         childContent += parseNode(child);
       });
 
-      // Block elements usually need a newline
-      if (['div', 'p', 'section'].includes(tagName)) {
-        return childContent.trim() ? childContent + "\n\n" : "";
-      }
-
       return childContent;
     }
 
-    // Simple parsing logic: Just parse the container
-    return parseNode(mainContainer);
+    // Return both parsed content and raw HTML
+    return {
+      parsed: parseNode(mainContainer),
+      raw: mainContainer.innerHTML
+    };
   }
 
   // Polling for content
@@ -85,11 +61,15 @@
   
   const interval = setInterval(() => {
     attempts++;
-    const content = extractContent();
+    const result = extractContent();
     
-    if (content && content.length > 50) { 
+    if (result && result.parsed && result.parsed.length > 50) { 
       clearInterval(interval);
-      chrome.runtime.sendMessage({ action: 'google_ai_result', data: content });
+      chrome.runtime.sendMessage({ 
+        action: 'google_ai_result', 
+        data: result.parsed,
+        rawHtml: result.raw 
+      });
     } else if (attempts >= maxAttempts) {
       clearInterval(interval);
       chrome.runtime.sendMessage({ 
