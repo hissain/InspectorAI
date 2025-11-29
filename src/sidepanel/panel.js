@@ -160,22 +160,35 @@ async function copyToClipboard(text) {
 
 async function viewLogs() {
   try {
-    const data = await chrome.storage.local.get(['last_prompt.log', 'last_response.log']);
+    const data = await chrome.storage.local.get(['last_prompt.log', 'last_response.log', 'google_scraper_last_raw.html']);
     const prompt = data['last_prompt.log'] || 'No prompt logged.';
     const response = data['last_response.log'] || 'No response logged.';
+    const rawHtml = data['google_scraper_last_raw.html'];
 
-    const logContent = `
+    let logContent = `
       <style>
+        body { font-family: sans-serif; }
         pre {
           white-space: pre-wrap;
           word-wrap: break-word;
+          background-color: #f4f4f4;
+          padding: 1em;
+          border-radius: 5px;
         }
+        h1 { font-size: 1.5em; }
       </style>
       <h1>Last Prompt</h1>
       <pre>${escapeHtml(prompt)}</pre>
       <h1>Last Response</h1>
       <pre>${escapeHtml(response)}</pre>
     `;
+
+    if (rawHtml) {
+      logContent += `
+        <h1>Google Scraper Raw HTML</h1>
+        <pre>${escapeHtml(rawHtml)}</pre>
+      `;
+    }
 
     const blob = new Blob([logContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);

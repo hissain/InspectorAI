@@ -3,11 +3,19 @@
   function extractContent() {
     // Selectors based on gtalk implementation
     const mainContainer = document.querySelector('div.mZJni.Dn7Fzd') || 
-                          document.querySelector('div.Y3BBE') || 
+                          document.querySelector('div.Y3BBE') ||
+                          document.querySelector('div[jscontroller=\'M93fIe\']') ||
                           document.querySelector('div.kCrYT') || 
                           document.querySelector('div.hgKElc');
 
     if (!mainContainer) return null;
+    
+    // Clone the container to avoid modifying the live page
+    const cleanContainer = mainContainer.cloneNode(true);
+    
+    // Remove known junk elements
+    cleanContainer.querySelectorAll('.VlQBpc, [role="status"]').forEach(el => el.remove());
+
 
     // Recursive function to parse nodes to Markdown
     function parseNode(node) {
@@ -20,6 +28,11 @@
 
       const tagName = node.tagName.toLowerCase();
       const classList = node.classList;
+      
+      // Ignore irrelevant elements
+      if (['button', 'svg', 'video'].includes(tagName)) {
+        return "";
+      }
 
       // Handle Code Blocks (often in pre/code or specific divs)
       if (tagName === 'pre' || (tagName === 'div' && classList.contains('r1PmQe'))) {
@@ -30,13 +43,35 @@
         return `\n\`\`\`${lang}\n${codeText}\n\`\`\`\n`;
       }
 
-      // Only process pre and code blocks
-      if (tagName !== 'pre' && tagName !== 'code') {
-        let childContent = "";
-        node.childNodes.forEach(child => {
-          childContent += parseNode(child);
+      // Handle Lists
+      if (tagName === 'ul' || tagName === 'ol') {
+        let listMd = "\n";
+        Array.from(node.children).forEach(li => {
+          if (li.tagName.toLowerCase() === 'li') {
+            listMd += `- ${li.textContent.replace(/\s+/g, ' ').trim()}\n`;
+          }
         });
-        return childContent;
+        return listMd + "\n";
+      }
+
+      // Handle Tables
+      if (tagName === 'table') {
+        let tableMd = "\n";
+        const rows = node.querySelectorAll('tr');
+        rows.forEach((row, index) => {
+          const cells = row.querySelectorAll('th, td');
+          const rowText = Array.from(cells).map(c => c.textContent.trim()).join(' | ');
+          tableMd += `| ${rowText} |\n`;
+          if (index === 0) {
+             tableMd += `| ${Array.from(cells).map(() => '---').join(' | ')} |\n`;
+          }
+        });
+        return tableMd + "\n";
+      }
+
+      // Handle Headings
+      if (['h1','h2','h3','h4'].includes(tagName) || node.getAttribute('role') === 'heading') {
+        return `\n### ${node.textContent.trim()}\n`;
       }
 
       // General traversal
@@ -45,13 +80,18 @@
         childContent += parseNode(child);
       });
 
+      // Block elements usually need a newline
+      if (['div', 'p', 'section'].includes(tagName)) {
+        return childContent.trim() ? childContent + "\n\n" : "";
+      }
+
       return childContent;
     }
 
     // Return both parsed content and raw HTML
     return {
-      parsed: parseNode(mainContainer),
-      raw: mainContainer.innerHTML
+      parsed: parseNode(cleanContainer),
+      raw: mainContainer.innerHTML // Log the original, not the cleaned one
     };
   }
 
