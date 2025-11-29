@@ -1,5 +1,5 @@
 {
-  "manifest_version": 4,
+  "manifest_version": 3,
   "name": "InspectorAI",
   "version": "1.0.3",
   "description": "Inspect HTML elements and query AI providers.",
