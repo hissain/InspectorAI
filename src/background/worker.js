@@ -24,14 +24,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 async function handlePromptExecution({ html, query, settings }) {
   const { provider, model, apiKey, maxTokens, customBaseUrl } = settings;
   
-  // Custom provider might use empty key (e.g. localhost)
-  if (!apiKey && provider !== 'custom') {
+  // Custom provider and Google AI Mode don't need API key
+  if (!apiKey && provider !== 'custom' && provider !== 'google-ai-mode') {
     throw new Error('API Key is missing.');
   }
 
   const systemPrompt = "You are an AI assistant analyzing UI content from a webpage. You will receive a simplified HTML representation of the visible content.\n\nIMPORTANT RULES:\n1. Focus on the VISIBLE TEXT and CONTENT (tables, lists, images).\n2. Do NOT output the full HTML code unless explicitly asked to 'refactor' or 'rewrite code'.\n3. If asked to translate, summarize, or explain, provide ONLY the text result, not the HTML structure.\n4. Ignore technical noise (classes, attributes) if they are not relevant to the query.";
   
-  const userPrompt = `Here is the visible content structure (simplified HTML) of the selected element:\n\n\`\`\`html\n${html}\n\`\`\`\n\nUser Query:\n${query}`;
+  // Standard prompt for API providers
+  let userPrompt = `Here is the visible content structure (simplified HTML) of the selected element:\n\n\`\`\`html\n${html}\n\`\`\`\n\nUser Query:\n${query}`;
+
+  // Special prompt handling for Google AI Mode (Search URL limits)
+  if (provider === 'google-ai-mode') {
+    // Truncate HTML context aggressively to avoid 414 URI Too Long
+    //const truncatedHtml = html.length > 1500 ? html.substring(0, 1500) + '... (truncated)' : html;
+    // Format as a search-friendly query - Query FIRST for better focus
+    userPrompt = `${query}\n\nData to process:\n\`\`\`html\n${html}\n\`\`\`\n\n(Provide direct answer only in Markdown format within a codeblock. Do not add any extra conversation.)`;
+  }
 
   try {
     switch (provider) {
@@ -41,10 +50,12 @@ async function handlePromptExecution({ html, query, settings }) {
         return await callAnthropic(model, apiKey, maxTokens, systemPrompt, userPrompt);
       case 'gemini':
         return await callGemini(model, apiKey, maxTokens, systemPrompt, userPrompt);
-      case 'llama':
-        return await callLlama(model, apiKey, maxTokens, systemPrompt, userPrompt);
+    // Format as a search-friendly query - Query FIRST for better focus
+    userPrompt = `${query} \n\nContext: ${truncatedText}`;
       case 'custom':
         return await callCustom(customBaseUrl, model, apiKey, maxTokens, systemPrompt, userPrompt);
+      case 'google-ai-mode':
+        return await callGoogleAIMode(userPrompt);
       default:
         throw new Error(`Provider ${provider} not supported.`);
     }
@@ -80,6 +91,80 @@ async function callOpenAI(model, apiKey, maxTokens, system, user) {
 
   const data = await response.json();
   return data.choices[0].message.content;
+}
+
+// --- Google AI Mode (Free/Tokenless) ---
+async function callGoogleAIMode(prompt) {
+  return new Promise((resolve, reject) => {
+    // Construct Google Search URL with AI parameters
+    // udm=50, aep=11 are triggers for AI overview
+    const encodedQuery = encodeURIComponent(prompt);
+    const searchUrl = `https://www.google.com/search?udm=50&aep=11&hl=en&lr=lang_en&q=${encodedQuery}`;
+
+    // Create a background tab
+    chrome.tabs.create({ url: searchUrl, active: false }, (tab) => {
+      if (chrome.runtime.lastError) {
+        return reject(new Error('Failed to open background tab: ' + chrome.runtime.lastError.message));
+      }
+
+      // Listener for the result from the content script
+      const listener = (message, sender) => {
+        if (sender.tab && sender.tab.id === tab.id && message.action === 'google_ai_result') {
+          chrome.runtime.onMessage.removeListener(listener);
+          
+          // Resolve immediately
+          if (message.error) {
+            reject(new Error(message.error));
+          } else {
+            resolve(message.data);
+          }
+
+          // Delay closing for 5 seconds for debugging visibility
+          setTimeout(() => {
+            chrome.tabs.get(tab.id, () => {
+              if (!chrome.runtime.lastError) {
+                chrome.tabs.remove(tab.id);
+              }
+            });
+          }, 100);
+        }
+      };
+
+      chrome.runtime.onMessage.addListener(listener);
+
+      // Inject the scraper script once loaded
+      // We use onUpdated to wait for load
+      const updateListener = (tabId, changeInfo) => {
+        if (tabId === tab.id && changeInfo.status === 'complete') {
+          chrome.tabs.onUpdated.removeListener(updateListener);
+          
+          // Inject script
+          chrome.scripting.executeScript({
+            target: { tabId: tabId },
+            files: ['src/content/google_scraper.js']
+          }).catch(err => {
+            chrome.tabs.remove(tabId);
+            reject(new Error('Failed to inject scraper: ' + err.message));
+          });
+        }
+      };
+      
+      chrome.tabs.onUpdated.addListener(updateListener);
+      
+      // Timeout safety (30 seconds)
+      setTimeout(() => {
+        chrome.runtime.onMessage.removeListener(listener);
+        chrome.tabs.onUpdated.removeListener(updateListener);
+        // Check if tab still exists before removing
+        chrome.tabs.get(tab.id, () => {
+            if (!chrome.runtime.lastError) {
+                chrome.tabs.remove(tab.id);
+            }
+        });
+        reject(new Error('Google AI Mode request timed out.'));
+      }, 30000);
+    });
+  });
 }
 
 // --- Anthropic ---

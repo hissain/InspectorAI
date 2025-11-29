@@ -9,8 +9,8 @@
  */
 
 const DEFAULT_SETTINGS = {
-  provider: 'openai',
-  model: 'gpt-4o-mini',
+  provider: 'google-ai-mode',
+  model: '',
   apiKey: '',
   maxTokens: 2048,
   customBaseUrl: '',

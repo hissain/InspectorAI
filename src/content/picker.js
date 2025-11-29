@@ -126,9 +126,9 @@ function cleanElement(element) {
       
       if (!allowedAttrs.includes(name)) {
         el.removeAttribute(name);
-      } else if (val.length > 50) {
-        // Truncate long attributes to save tokens
-        el.setAttribute(name, val.substring(0, 50) + '...');
+      } else if (name === 'src' || val.length > 50) {
+        // Aggressively truncate src and long attributes to save tokens/URL space
+        el.setAttribute(name, '...');
       }
     });
     

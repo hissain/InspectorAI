@@ -200,6 +200,7 @@
     <div class="form-group">
       <label for="provider">AI Provider</label>
       <select id="provider">
+        <option value="google-ai-mode">Google AI Mode (Free/No Token)</option>
         <option value="openai">OpenAI</option>
         <option value="anthropic">Anthropic</option>
         <option value="gemini">Google Gemini</option>
@@ -227,7 +228,7 @@
       </div>
     </div>
 
-    <div class="form-group">
+    <div class="form-group" id="apiKeyGroup">
       <label for="apiKey">API Key</label>
       <input type="password" id="apiKey" placeholder="Enter API Key">
     </div>

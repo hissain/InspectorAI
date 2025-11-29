@@ -25,6 +25,7 @@ const modelGroup = document.getElementById('modelGroup');
 const customFields = document.getElementById('customFields');
 const customBaseUrl = document.getElementById('customBaseUrl');
 const customModel = document.getElementById('customModel');
+const apiKeyGroup = document.getElementById('apiKeyGroup');
 const apiKeyInput = document.getElementById('apiKey');
 const maxTokensInput = document.getElementById('maxTokens');
 const saveSettingsBtn = document.getElementById('saveSettingsBtn');
@@ -32,6 +33,7 @@ const cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
 const statusDiv = document.getElementById('status');
 
 const PROVIDER_MODELS = {
+  'google-ai-mode': [], // No models
   openai: [
     { value: 'gpt-4.1', label: 'GPT-4.1' },
     { value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini' },
@@ -85,15 +87,24 @@ function updatePreview(html) {
 }
 
 function updateModelOptions(provider, selectedModel) {
-  if (provider === 'custom') {
-    modelGroup.classList.add('hidden');
-    customFields.classList.remove('hidden');
+  // Hide everything first
+  modelGroup.classList.add('hidden');
+  customFields.classList.add('hidden');
+  apiKeyGroup.classList.remove('hidden'); // Default show
+
+  if (provider === 'google-ai-mode') {
+    apiKeyGroup.classList.add('hidden'); // No API key needed
     return;
   }
 
-  modelGroup.classList.remove('hidden');
-  customFields.classList.add('hidden');
+  if (provider === 'custom') {
+    customFields.classList.remove('hidden');
+    // API Key optional for custom, but let's keep it visible
+    return;
+  }
 
+  // Standard providers
+  modelGroup.classList.remove('hidden');
   modelSelect.innerHTML = '';
   const models = PROVIDER_MODELS[provider] || [];
   
@@ -243,10 +254,8 @@ sendBtn.addEventListener('click', async () => {
   const settings = await getSettings();
   const apiKey = await getApiKey();
 
-  // API Key is optional for some custom providers (e.g. local ollama), but usually required. 
-  // Let's allow empty key if provider is custom? 
-  // The user might be using localhost with no auth.
-  if (!apiKey && settings.provider !== 'custom') {
+  // API Key Check
+  if (!apiKey && settings.provider !== 'custom' && settings.provider !== 'google-ai-mode') {
     markdownOutput.innerHTML = '<p style="color:red">Error: API Key missing. Click the ⚙️ icon to set it.</p>';
     return;
   }
