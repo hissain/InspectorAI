@@ -56,10 +56,10 @@ async function handlePromptExecution({ html, query, settings }) {
 
   let userPrompt = `Here is the simplified HTML of the selected element:\n\n\`\`\`html\n${html}\n\`\`\`\n\nUser Query:\n${query}\n\`\`\`\n\nDo not include any extra commentary or introductory text`;
   
-  if (provider === 'google-ai-mode') {
-    //const extractedText = simpleHtmlToText(html);
-    userPrompt = `Please ${query} the following text and provide the response in clean markdown format. Do not include any extra commentary or introductory text.\n\nText to process:\n"${html}"`;
-  }
+  // if (provider === 'google-ai-mode') {
+  //   const extractedText = simpleHtmlToText(html);
+  //   userPrompt = `Please ${query} the following text and provide the response in clean markdown format. Do not include any extra commentary or introductory text.\n\nText to process:\n"${extractedText}"`;
+  // }
 
   let responseText = '';
   try {
