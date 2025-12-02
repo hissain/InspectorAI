@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "InspectorAI",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Inspect HTML elements and query AI providers with minimal token.",
   "permissions": [
     "sidePanel",

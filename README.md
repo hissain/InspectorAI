@@ -1,23 +1,23 @@
 # InspectorAI
 
-![InspectorAI Screenshot](assets/Screenshot.png)
+![InspectorAI Screenshot](assets/store_screenshot.png)
 
 **InspectorAI** is a production-ready Chrome extension that supercharges your web data extraction and analysis workflow. Select any web component, extract its content with minimal tokens, and ask AI models for insights—all without leaving your browser.
 
-### Why InspectorAI?
+## Why InspectorAI?
 
 **InspectorAI** simplifies the process of interacting with web content. It visually selects any part of a website, intelligently cleans the HTML to remove noise, and sends the core content to an AI for analysis, translation, or extraction.
 
-**For Everyone:** Easily extract tables to CSV, translate content, or summarize articles without dealing with messy code.
-**For Developers:** Automate DOM inspection and context-switching.
+- **For Everyone:** Easily extract tables to CSV, translate content, or summarize articles without dealing with messy code.
+- **For Developers:** Automate DOM inspection and context-switching.
 
-### Common Use Cases
+## Common Use Cases
 
-* **Translation**: Select a block of text in a foreign language and ask AI to translate it while preserving the structure.
-* **Summarization**: Pick a news article or long post and get a concise summary.
-* **Data Extraction**: Select a complex table and ask AI to convert it into CSV or JSON format.
-* **Learning**: Select a UI component and ask "How is this built?" or "Explain this code".
-* **Accessibility**: Check if a selected element is screen-reader friendly.
+- **Translation**: Select a block of text in a foreign language and ask AI to translate it while preserving the structure.
+- **Summarization**: Pick a news article or long post and get a concise summary.
+- **Data Extraction**: Select a complex table and ask AI to convert it into CSV or JSON format.
+- **Learning**: Select a UI component and ask "How is this built?" or "Explain this code".
+- **Accessibility**: Check if a selected element is screen-reader friendly.
 
 ## Features
 
@@ -60,7 +60,7 @@
 ## Usage
 
 1. **Open Inspector**: Click the extension icon in your toolbar to open the Side Panel.
-2. **Configure AI**: Click the **Settings (Gear)** button in the panel header. Select your preferred AI provider (e.g., Gemini, OpenAI) and enter your API Key.
+2. **Configure AI**: Click the **Settings** button in the panel header. Select your preferred AI provider (e.g., Gemini, OpenAI) and enter your API Key.
 3. **Pick an Element**: Click **"Pick Element"** in the panel. Hover over the webpage to highlight elements, then click to select one. (Press **Esc** to cancel).
 4. **Ask AI**: The simplified content structure will appear in the panel. Type your query (e.g., "Translate this to Spanish" or "Make this table responsive") and click **"Ask AI"**.
 
