@@ -4,6 +4,9 @@ let selectedElement = null;
 
 function enablePicker() {
   if (isActive) return;
+  // Clear any previous selection/overlay
+  removeOverlay();
+  
   isActive = true;
   document.body.style.cursor = 'crosshair';
   document.addEventListener('mouseover', handleMouseOver);
@@ -142,31 +145,51 @@ function cleanElement(element) {
 }
 
 function showOverlay() {
-  let overlay = document.getElementById('inspect-ai-overlay');
-  if (!overlay) {
-    overlay = document.createElement('div');
-    overlay.id = 'inspect-ai-overlay';
-    overlay.innerHTML = `
-      <span>Element Selected</span>
-      <button id="inspect-ai-btn-copy">Copy HTML</button>
-      <button id="inspect-ai-btn-close">×</button>
-    `;
-    document.body.appendChild(overlay);
-    
-    document.getElementById('inspect-ai-btn-copy').addEventListener('click', () => {
-      if (selectedElement) {
-        navigator.clipboard.writeText(selectedElement.outerHTML);
-        alert('HTML Copied to Clipboard!');
-      }
-    });
-    
-    document.getElementById('inspect-ai-btn-close').addEventListener('click', () => {
-      if (selectedElement) {
-        selectedElement.classList.remove('inspect-ai-selected');
-        selectedElement = null;
-      }
-      overlay.remove();
-    });
+  // Ensure no duplicate overlay
+  removeOverlay(false); // false = don't clear selection yet, just UI if any
+
+  const overlay = document.createElement('div');
+  overlay.id = 'inspect-ai-overlay';
+  overlay.innerHTML = `
+    <span>Element Selected</span>
+    <button id="inspect-ai-btn-copy">Copy HTML</button>
+    <button id="inspect-ai-btn-close">×</button>
+  `;
+  document.body.appendChild(overlay);
+  
+  document.getElementById('inspect-ai-btn-copy').addEventListener('click', () => {
+    if (selectedElement) {
+      navigator.clipboard.writeText(selectedElement.outerHTML);
+      const btn = document.getElementById('inspect-ai-btn-copy');
+      const original = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = original, 1000);
+    }
+  });
+  
+  document.getElementById('inspect-ai-btn-close').addEventListener('click', () => removeOverlay(true));
+  
+  // Attach Esc listener for the overlay state
+  document.addEventListener('keydown', handleOverlayEsc);
+}
+
+function removeOverlay(clearSelection = true) {
+  const overlay = document.getElementById('inspect-ai-overlay');
+  if (overlay) {
+    overlay.remove();
+  }
+  if (clearSelection && selectedElement) {
+    selectedElement.classList.remove('inspect-ai-selected');
+    selectedElement = null;
+  }
+  document.removeEventListener('keydown', handleOverlayEsc);
+}
+
+function handleOverlayEsc(e) {
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    e.stopPropagation();
+    removeOverlay(true);
   }
 }
 
