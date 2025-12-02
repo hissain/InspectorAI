@@ -17,6 +17,13 @@ const markdownOutput = document.getElementById('markdown-output');
 const rawOutput = document.getElementById('raw-output');
 const htmlPreview = document.getElementById('htmlPreview');
 const settingsBtn = document.getElementById('settingsBtn');
+const appVersionSpan = document.getElementById('appVersion');
+
+// Set Version
+if (appVersionSpan && chrome.runtime.getManifest) {
+  const manifest = chrome.runtime.getManifest();
+  appVersionSpan.textContent = `v${manifest.version}`;
+}
 
 // DOM Elements - Settings View
 const providerSelect = document.getElementById('provider');

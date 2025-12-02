@@ -138,61 +138,81 @@ async function callGoogleAIMode(prompt) {
         return reject(new Error('Failed to open background tab: ' + chrome.runtime.lastError.message));
       }
 
-      // Listener for the result from the content script
+      const tabId = tab.id;
+      let injected = false;
+      let resolved = false;
+
+      // Cleanup function
+      const cleanup = () => {
+        chrome.runtime.onMessage.removeListener(listener);
+        chrome.tabs.onUpdated.removeListener(updateListener);
+        clearTimeout(fallbackTimer);
+        clearTimeout(timeoutTimer);
+        // Attempt to close tab
+        chrome.tabs.remove(tabId, () => {
+            chrome.runtime.lastError; // Ignore error
+        });
+      };
+
+      // Message Listener
       const listener = (message, sender) => {
-        if (sender.tab && sender.tab.id === tab.id && message.action === 'google_ai_result') {
-          chrome.runtime.onMessage.removeListener(listener);
+        if (sender.tab && sender.tab.id === tabId && message.action === 'google_ai_result') {
+          if (resolved) return;
+          resolved = true;
           
-          // Resolve immediately
           if (message.error) {
+            cleanup();
             reject(new Error(message.error));
           } else {
             if (message.rawHtml) {
-              // Log the raw HTML from the scraper
               chrome.storage.local.set({ 'google_scraper_last_raw.html': message.rawHtml });
             }
+            cleanup();
             resolve(message.data);
           }
-
-          if (!chrome.runtime.lastError) {
-            chrome.tabs.remove(tab.id);
-          }
         }
       };
-
       chrome.runtime.onMessage.addListener(listener);
 
-      // Inject the scraper script once loaded
-      // We use onUpdated to wait for load
-      const updateListener = (tabId, changeInfo) => {
-        if (tabId === tab.id && changeInfo.status === 'complete') {
-          chrome.tabs.onUpdated.removeListener(updateListener);
-          
-          // Inject script
-          chrome.scripting.executeScript({
-            target: { tabId: tabId },
-            files: ['src/content/google_scraper.js']
-          }).catch(err => {
-            chrome.tabs.remove(tabId);
-            reject(new Error('Failed to inject scraper: ' + err.message));
-          });
+      // Injection Helper
+      const injectScraper = () => {
+        if (injected) return;
+        injected = true;
+        
+        chrome.scripting.executeScript({
+          target: { tabId: tabId },
+          files: ['src/content/google_scraper.js']
+        }).catch(err => {
+          if (!resolved) {
+             console.error('Failed to inject scraper:', err);
+          }
+        });
+      };
+
+      // Tab Update Listener
+      const updateListener = (tId, changeInfo) => {
+        if (tId === tabId && changeInfo.status === 'complete') {
+          injectScraper();
         }
       };
-      
       chrome.tabs.onUpdated.addListener(updateListener);
-      
-      // Timeout safety (30 seconds)
-      setTimeout(() => {
-        chrome.runtime.onMessage.removeListener(listener);
-        chrome.tabs.onUpdated.removeListener(updateListener);
-        // Check if tab still exists before removing
-        chrome.tabs.get(tab.id, () => {
-            if (!chrome.runtime.lastError) {
-                chrome.tabs.remove(tab.id);
-            }
-        });
-        reject(new Error('Google AI Mode request timed out.'));
-      }, 30000);
+
+      // Fallback Timer (Inject if taking too long to reach 'complete')
+      const fallbackTimer = setTimeout(() => {
+        if (!injected && !resolved) {
+            console.log('Google AI Mode: Fallback injection triggered.');
+            injectScraper();
+        }
+      }, 10000); // 10 seconds
+
+      // Overall Timeout (60 seconds)
+      const timeoutTimer = setTimeout(() => {
+        if (!resolved) {
+            resolved = true;
+            cleanup();
+            reject(new Error('Google AI Mode request timed out (60s).'));
+        }
+      }, 60000);
     });
   });
 }

@@ -1,35 +1,37 @@
 #!/bin/bash
 
-# Define the output filename
-OUTPUT_FILE="InspectorAI-Release.zip"
+# Extract version from manifest.json
+VERSION=$(grep -o '"version": "[^"]*"' manifest.json | cut -d'"' -f4)
+
+# Define the output filename with version
+OUTPUT_FILE="InspectorAI-v$VERSION.zip"
 
 # Remove existing zip if it exists
 if [ -f "$OUTPUT_FILE" ]; then
     rm "$OUTPUT_FILE"
 fi
 
-# Create the zip file
-# Exclude:
-# - .git directory
-# - .github directory (workflows)
-# - .DS_Store (macOS metadata)
-# - .vscode (editor settings)
-# - node_modules (dependencies, if any)
-# - *.zip (prevent recursive zipping of existing archives)
-# - package.sh (this script itself)
-# - LICENSE (usually included, but user might want to check CWS policies. We'll include it.)
-# - README.md (We'll include it)
+echo "Creating release package: $OUTPUT_FILE"
 
-zip -r "$OUTPUT_FILE" . \
-    -x "*.git*" \
-    -x ".github/*" \
+# Create the zip file with explicit file list (Allowlist approach)
+zip -r "$OUTPUT_FILE" \
+    manifest.json \
+    src \
+    assets \
+    LICENSE \
+    README.md \
+    PRIVACY_POLICY.md \
     -x "*.DS_Store" \
-    -x ".vscode/*" \
-    -x "node_modules/*" \
-    -x "*.zip" \
-    -x "package.sh"
+    -x "*.git*"
 
-echo "---------------------------------------------------"
-echo "Successfully created release package: $OUTPUT_FILE"
-echo "You can upload this file to the Chrome Web Store."
-echo "---------------------------------------------------"
+# Verify if zip was successful
+if [ $? -eq 0 ]; then
+    echo "---------------------------------------------------"
+    echo "Successfully created release package: $OUTPUT_FILE"
+    echo "Files included:"
+    unzip -l "$OUTPUT_FILE"
+    echo "---------------------------------------------------"
+else
+    echo "Error: Failed to create zip file."
+    exit 1
+fi
