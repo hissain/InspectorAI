@@ -47,7 +47,7 @@ function handleMouseOut(e) {
 }
 
 function handleKeyDown(e) {
-  if (e.key === 'Escape') {
+  if (e.key === 'Escape' || e.keyCode === 27) {
     e.preventDefault();
     e.stopPropagation();
     disablePicker();
@@ -186,7 +186,7 @@ function removeOverlay(clearSelection = true) {
 }
 
 function handleOverlayEsc(e) {
-  if (e.key === 'Escape') {
+  if (e.key === 'Escape' || e.keyCode === 27) {
     e.preventDefault();
     e.stopPropagation();
     removeOverlay(true);
